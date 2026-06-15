@@ -7,12 +7,13 @@ iOS版ではApp Store審査要件に対応するため、Appleログインも提
 
 - Firebase Authのログイン状態を端末へ永続化
 - Web版Googleログイン
+- iOS版ネイティブGoogleログイン
 - iOS版Appleログイン
 - ゲスト利用
 - ログアウト
 - アカウントと関連Firestoreデータの削除
 
-ネイティブ版Googleログインは、以下のFirebase設定ファイルを追加した後に有効化します。
+Android版Googleログインは、以下のAndroid用Firebase設定ファイルを追加した後に有効化します。
 
 ## Firebase Console
 
@@ -24,15 +25,17 @@ iOS版ではApp Store審査要件に対応するため、Appleログインも提
 
 1. Firebase Consoleのプロジェクト設定を開く
 2. iOSアプリを追加
-3. Bundle IDに`com.tnorip.stq`を指定
+3. Bundle IDに`com.noristudio.stq`を指定
 4. `GoogleService-Info.plist`をダウンロード
 5. ファイルをプロジェクト直下へ配置
 
-設定ファイルを追加した後、`@react-native-google-signin/google-signin`を導入してEAS Development Buildを作成します。
+`GoogleService-Info.plist`はプロジェクト直下へ配置済みです。
+iOSのGoogleログインはEAS Development Buildで確認します。Expo Goでは動作しません。
 
 ## Androidアプリの登録
 
-Android版を開始するときに、FirebaseへAndroidアプリを追加して`google-services.json`を取得します。
+Android版を開始するときに、パッケージ名`com.noristudio.stq`でFirebaseへAndroidアプリを追加し、
+`google-services.json`を取得します。
 EAS BuildとGoogle Play App Signingで使用するSHA-1証明書もFirebaseへ登録します。
 
 ## 注意

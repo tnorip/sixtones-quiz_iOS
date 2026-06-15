@@ -9,10 +9,12 @@
     "scheme": "stq",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.tnorip.stq",
+      "bundleIdentifier": "com.noristudio.stq",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true
     },
     "android": {
+      "package": "com.noristudio.stq",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +27,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       "expo-sharing"
     ]
