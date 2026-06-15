@@ -1,13 +1,16 @@
 {
   "expo": {
-    "name": "sixtones-quiz_iOS",
-    "slug": "sixtones-quiz_iOS",
+    "name": "ストQ",
+    "slug": "stq-sixtones-quiz",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "stq",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tnorip.stq",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +23,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-apple-authentication",
+      "expo-sharing"
+    ]
   }
 }
