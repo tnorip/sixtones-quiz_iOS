@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../auth/AuthContext';
 import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
 import type { RootStackParamList } from '../navigation';
@@ -15,6 +16,9 @@ const menuItems = [
 ] as const;
 
 export function HomeScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'ゲスト リスナー';
+
   return (
     <Screen>
       <View style={styles.hero}>
@@ -26,7 +30,7 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.userCard}>
         <View>
           <Text style={styles.welcome}>ようこそ</Text>
-          <Text style={styles.username}>ゲスト リスナー</Text>
+          <Text style={styles.username}>{displayName}</Text>
         </View>
         <View style={styles.points}>
           <Text style={styles.pointsLabel}>POINT</Text>
@@ -35,6 +39,10 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       <GoldButton label="クイズに挑戦" onPress={() => navigation.navigate('GameMenu')} />
+
+      <Pressable onPress={() => navigation.navigate('Account')} style={styles.accountLink}>
+        <Text style={styles.accountText}>{user ? 'アカウント設定' : 'ログインしてデータを引き継ぐ'}</Text>
+      </Pressable>
 
       <View style={styles.grid}>
         {menuItems.map(([title, description]) => (
@@ -87,6 +95,8 @@ const styles = StyleSheet.create({
   points: { alignItems: 'flex-end' },
   pointsLabel: { color: colors.gold, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
   pointsValue: { color: colors.goldLight, fontSize: 20, fontWeight: '900', marginTop: 2 },
+  accountLink: { alignItems: 'center', paddingTop: 16, paddingBottom: 2 },
+  accountText: { color: colors.gold, fontSize: 12, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 20 },
   menuCard: {
     width: '48%',
