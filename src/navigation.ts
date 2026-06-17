@@ -5,7 +5,9 @@ export type RootStackParamList = {
   Home: undefined;
   GameMenu: undefined;
   Quiz: { difficulty: Difficulty | 'ランダム' };
-  Result: { score: number; total: number };
+  Result: { score: number; total: number; earnedPoints: number; saved: boolean };
   Account: undefined;
+  Profile: undefined;
+  History: undefined;
   Placeholder: { title: string; description: string };
 };

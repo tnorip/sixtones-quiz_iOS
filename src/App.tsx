@@ -9,8 +9,10 @@ import { colors } from './theme';
 import { AccountScreen } from './screens/AccountScreen';
 import { GameMenuScreen } from './screens/GameMenuScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
 import { QuizScreen } from './screens/QuizScreen';
 import { ResultScreen } from './screens/ResultScreen';
 
@@ -62,6 +64,8 @@ function RootNavigator() {
           <Stack.Screen name="Quiz" component={QuizScreen} options={{ title: 'フリープレイ', gestureEnabled: false }} />
           <Stack.Screen name="Result" component={ResultScreen} options={{ title: '結果', gestureEnabled: false }} />
           <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'アカウント' }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'プロフィール' }} />
+          <Stack.Screen name="History" component={HistoryScreen} options={{ title: '履歴' }} />
           <Stack.Screen
             name="Placeholder"
             component={PlaceholderScreen}

@@ -3,21 +3,23 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
+import { useUserStats } from '../hooks/useUserStats';
 import type { RootStackParamList } from '../navigation';
 import { colors, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 const menuItems = [
-  ['プロフィール', 'ポイントや称号を確認'],
-  ['履歴', 'これまでの回答を確認'],
-  ['ランキング', '全国のファンと競う'],
-  ['ストーン', '所持ストーンを確認'],
+  ['プロフィール', 'ポイントや称号を確認', 'Profile'],
+  ['履歴', 'これまでの回答を確認', 'History'],
+  ['ランキング', '全国のファンと競う', 'Placeholder'],
+  ['ストーン', '所持ストーンを確認', 'Placeholder'],
 ] as const;
 
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'ゲスト リスナー';
+  const { stats } = useUserStats();
+  const displayName = user ? stats.username : 'ゲスト リスナー';
 
   return (
     <Screen>
@@ -31,10 +33,11 @@ export function HomeScreen({ navigation }: Props) {
         <View>
           <Text style={styles.welcome}>ようこそ</Text>
           <Text style={styles.username}>{displayName}</Text>
+          <Text style={styles.rank}>{stats.rank}</Text>
         </View>
         <View style={styles.points}>
           <Text style={styles.pointsLabel}>POINT</Text>
-          <Text style={styles.pointsValue}>0 P</Text>
+          <Text style={styles.pointsValue}>{stats.points} P</Text>
         </View>
       </View>
 
@@ -45,10 +48,14 @@ export function HomeScreen({ navigation }: Props) {
       </Pressable>
 
       <View style={styles.grid}>
-        {menuItems.map(([title, description]) => (
+        {menuItems.map(([title, description, target]) => (
           <Pressable
             key={title}
-            onPress={() => navigation.navigate('Placeholder', { title, description })}
+            onPress={() => {
+              if (target === 'Profile') navigation.navigate('Profile');
+              else if (target === 'History') navigation.navigate('History');
+              else navigation.navigate('Placeholder', { title, description });
+            }}
             style={({ pressed }) => [styles.menuCard, pressed && styles.pressed]}
           >
             <Text style={styles.menuTitle}>{title}</Text>
@@ -78,7 +85,7 @@ const styles = StyleSheet.create({
   logo: { color: colors.goldLight, fontSize: 58, fontWeight: '900', letterSpacing: 4, marginTop: 4 },
   tagline: { color: colors.muted, fontSize: 13, marginTop: 4 },
   userCard: {
-    minHeight: 86,
+    minHeight: 96,
     borderRadius: 18,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -92,6 +99,7 @@ const styles = StyleSheet.create({
   },
   welcome: { color: colors.muted, fontSize: 12 },
   username: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: 4 },
+  rank: { color: colors.gold, fontSize: 12, fontWeight: '700', marginTop: 6 },
   points: { alignItems: 'flex-end' },
   pointsLabel: { color: colors.gold, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
   pointsValue: { color: colors.goldLight, fontSize: 20, fontWeight: '900', marginTop: 2 },

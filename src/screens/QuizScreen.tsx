@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../auth/AuthContext';
 import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
 import { sampleQuizzes, type Quiz } from '../data/quizzes';
 import type { RootStackParamList } from '../navigation';
 import { loadQuizzes } from '../services/quizRepository';
+import { saveQuizRun, type QuizAnswerResult } from '../services/userRepository';
 import { colors, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Quiz'>;
@@ -32,8 +34,10 @@ function randomizeOptions(quiz: Quiz): Quiz {
 }
 
 export function QuizScreen({ navigation, route }: Props) {
+  const { user } = useAuth();
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
 
   useEffect(() => {
@@ -75,6 +79,7 @@ export function QuizScreen({ navigation, route }: Props) {
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const [results, setResults] = useState<QuizAnswerResult[]>([]);
   const quiz = quizzes[index];
   const answered = selected !== null;
 
@@ -107,7 +112,9 @@ export function QuizScreen({ navigation, route }: Props) {
   const answer = (optionIndex: number) => {
     if (answered) return;
     setSelected(optionIndex);
-    if (optionIndex === quiz.correct) {
+    const isCorrect = optionIndex === quiz.correct;
+    setResults((value) => [...value, { question: quiz, userAnswer: optionIndex, isCorrect }]);
+    if (isCorrect) {
       setScore((value) => value + 1);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
@@ -115,9 +122,23 @@ export function QuizScreen({ navigation, route }: Props) {
     }
   };
 
-  const next = () => {
+  const next = async () => {
     if (index === quizzes.length - 1) {
-      navigation.replace('Result', { score, total: quizzes.length });
+      const finalScore = results.filter((result) => result.isCorrect).length;
+      let earnedPoints = 0;
+      let saved = false;
+      if (user && !usingSampleData) {
+        setIsSaving(true);
+        try {
+          earnedPoints = await saveQuizRun(user, results);
+          saved = true;
+        } catch (error) {
+          console.warn('Failed to save quiz result.', error);
+        } finally {
+          setIsSaving(false);
+        }
+      }
+      navigation.replace('Result', { score: finalScore, total: quizzes.length, earnedPoints, saved });
       return;
     }
     setIndex((value) => value + 1);
@@ -166,7 +187,11 @@ export function QuizScreen({ navigation, route }: Props) {
             {selected === quiz.correct ? '正解！' : '残念、不正解'}
           </Text>
           {quiz.explanation ? <Text style={styles.explanation}>{quiz.explanation}</Text> : null}
-          <GoldButton label={index === quizzes.length - 1 ? '結果を見る' : '次の問題へ'} onPress={next} />
+          <GoldButton
+            label={index === quizzes.length - 1 ? (isSaving ? '保存中...' : '結果を見る') : '次の問題へ'}
+            disabled={isSaving}
+            onPress={() => void next()}
+          />
         </View>
       ) : null}
     </Screen>
