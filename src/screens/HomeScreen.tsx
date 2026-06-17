@@ -12,7 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const menuItems = [
   ['プロフィール', 'ポイントや称号を確認', 'Profile'],
   ['履歴', 'これまでの回答を確認', 'History'],
-  ['ランキング', '全国のファンと競う', 'Placeholder'],
+  ['ランキング', '全国のファンと競う', 'Ranking'],
   ['ストーン', '所持ストーンを確認', 'Placeholder'],
 ] as const;
 
@@ -54,6 +54,7 @@ export function HomeScreen({ navigation }: Props) {
             onPress={() => {
               if (target === 'Profile') navigation.navigate('Profile');
               else if (target === 'History') navigation.navigate('History');
+              else if (target === 'Ranking') navigation.navigate('Ranking');
               else navigation.navigate('Placeholder', { title, description });
             }}
             style={({ pressed }) => [styles.menuCard, pressed && styles.pressed]}

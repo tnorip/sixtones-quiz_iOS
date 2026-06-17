@@ -14,6 +14,7 @@ import { LoginScreen } from './screens/LoginScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { QuizScreen } from './screens/QuizScreen';
+import { RankingScreen } from './screens/RankingScreen';
 import { ResultScreen } from './screens/ResultScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -66,6 +67,7 @@ function RootNavigator() {
           <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'アカウント' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'プロフィール' }} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: '履歴' }} />
+          <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: 'ランキング' }} />
           <Stack.Screen
             name="Placeholder"
             component={PlaceholderScreen}

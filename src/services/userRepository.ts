@@ -50,6 +50,20 @@ export type HistoryItem = {
   timestamp?: unknown;
 };
 
+export type RankingEntry = {
+  username: string;
+  points: number;
+  rank: string;
+  grade: string;
+};
+
+export type RankingSeason = {
+  seasonId: string;
+  seasonNumber: number;
+  endsAt: string;
+  data: RankingEntry[];
+};
+
 const rankThresholds = [
   { minPoints: 1500, rankName: '最高地優吾' },
   { minPoints: 700, rankName: 'おやーンズ' },
@@ -73,6 +87,18 @@ export function getPointsForDifficulty(difficulty: Difficulty): number {
 
 export function getRankForPoints(points: number): string {
   return rankThresholds.find((threshold) => points >= threshold.minPoints)?.rankName ?? '新規リスナー';
+}
+
+export function getSeasonId(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function getSeasonNumber(date = new Date()): number {
+  return (date.getFullYear() - 2026) * 12 + (date.getMonth() + 1);
+}
+
+export function getSeasonEndDate(date = new Date()): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 }
 
 export function getDefaultStats(user?: User | null): UserStats {
@@ -130,6 +156,7 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
   );
   const correctCount = results.filter((result) => result.isCorrect).length;
   const userReference = doc(db, 'users', user.uid);
+  let updatedStats = getDefaultStats(user);
 
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(userReference);
@@ -137,6 +164,15 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
       ? normalizeStats(user.uid, snapshot.data(), user)
       : getDefaultStats(user);
     const nextPoints = current.points + earnedPoints;
+    const nextSeasonPoints = current.seasonPoints + earnedPoints;
+    updatedStats = {
+      ...current,
+      points: nextPoints,
+      seasonPoints: nextSeasonPoints,
+      correctCount: current.correctCount + correctCount,
+      totalCount: current.totalCount + results.length,
+      rank: getRankForPoints(nextPoints),
+    };
     transaction.set(
       userReference,
       {
@@ -169,7 +205,86 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
     });
   }
 
+  await updateRanking(updatedStats);
   return earnedPoints;
+}
+
+export async function updateRanking(stats: UserStats): Promise<void> {
+  const seasonId = getSeasonId();
+  const rankingReference = doc(db, 'rankings', seasonId);
+  const entry: RankingEntry = {
+    username: stats.username,
+    points: stats.seasonPoints,
+    rank: stats.rank,
+    grade: stats.grade,
+  };
+
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(rankingReference);
+    const current = snapshot.exists() ? snapshot.data() : {};
+    const ranking = Array.isArray(current.data)
+      ? current.data
+          .filter((item): item is RankingEntry => {
+            if (!item || typeof item !== 'object') return false;
+            const value = item as Partial<RankingEntry>;
+            return typeof value.username === 'string' && typeof value.points === 'number';
+          })
+          .map((item) => ({
+            username: item.username,
+            points: item.points,
+            rank: typeof item.rank === 'string' ? item.rank : '',
+            grade: typeof item.grade === 'string' ? item.grade : '-',
+          }))
+      : [];
+
+    const existingIndex = ranking.findIndex((item) => item.username === entry.username);
+    if (existingIndex >= 0) {
+      ranking[existingIndex] = entry;
+    } else {
+      ranking.push(entry);
+    }
+
+    ranking.sort((first, second) => second.points - first.points);
+
+    transaction.set(
+      rankingReference,
+      {
+        seasonNumber: getSeasonNumber(),
+        seasonId,
+        endsAt: getSeasonEndDate().toISOString(),
+        data: ranking.slice(0, 50),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
+}
+
+export async function loadCurrentRanking(): Promise<RankingSeason> {
+  const seasonId = getSeasonId();
+  const snapshot = await getDoc(doc(db, 'rankings', seasonId));
+  const data = snapshot.exists() ? snapshot.data() : {};
+  const ranking = Array.isArray(data.data)
+    ? data.data
+        .filter((item): item is RankingEntry => {
+          if (!item || typeof item !== 'object') return false;
+          const value = item as Partial<RankingEntry>;
+          return typeof value.username === 'string' && typeof value.points === 'number';
+        })
+        .map((item) => ({
+          username: item.username,
+          points: item.points,
+          rank: typeof item.rank === 'string' ? item.rank : '',
+          grade: typeof item.grade === 'string' ? item.grade : '-',
+        }))
+    : [];
+
+  return {
+    seasonId,
+    seasonNumber: typeof data.seasonNumber === 'number' ? data.seasonNumber : getSeasonNumber(),
+    endsAt: typeof data.endsAt === 'string' ? data.endsAt : getSeasonEndDate().toISOString(),
+    data: ranking,
+  };
 }
 
 export async function loadHistory(user: User, itemLimit = 20): Promise<HistoryItem[]> {

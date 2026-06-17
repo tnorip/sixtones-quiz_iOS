@@ -9,5 +9,6 @@ export type RootStackParamList = {
   Account: undefined;
   Profile: undefined;
   History: undefined;
+  Ranking: undefined;
   Placeholder: { title: string; description: string };
 };
