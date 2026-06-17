@@ -29,10 +29,20 @@ export type UserStats = {
   grade: string;
 };
 
+export type ExamGrade = '4級' | '3級' | '2級' | '1級' | '特級';
+
 export type QuizAnswerResult = {
   question: Quiz;
   userAnswer: number;
   isCorrect: boolean;
+};
+
+export type QuizRunMode = 'free' | 'exam';
+
+export type SaveQuizRunOptions = {
+  mode?: QuizRunMode;
+  grade?: ExamGrade;
+  passed?: boolean;
 };
 
 export type HistoryItem = {
@@ -63,6 +73,19 @@ export type RankingSeason = {
   endsAt: string;
   data: RankingEntry[];
 };
+
+export const examConfigs: Record<
+  ExamGrade,
+  { questions: number; passLine: number; difficulties: Difficulty[]; stoneCost: number }
+> = {
+  '4級': { questions: 3, passLine: 1, stoneCost: 1, difficulties: ['初級'] },
+  '3級': { questions: 5, passLine: 2, stoneCost: 1, difficulties: ['初級', '中級'] },
+  '2級': { questions: 7, passLine: 3, stoneCost: 1, difficulties: ['初級', '中級', '上級'] },
+  '1級': { questions: 7, passLine: 5, stoneCost: 1, difficulties: ['中級', '上級'] },
+  '特級': { questions: 7, passLine: 7, stoneCost: 3, difficulties: ['上級'] },
+};
+
+const gradeOrder = ['-', '4級', '3級', '2級', '1級', '特級'];
 
 const rankThresholds = [
   { minPoints: 1500, rankName: '最高地優吾' },
@@ -149,11 +172,19 @@ export async function loadUserStats(user: User): Promise<UserStats> {
   return normalizeStats(user.uid, snapshot.data(), user);
 }
 
-export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Promise<number> {
-  const earnedPoints = results.reduce(
-    (sum, result) => sum + (result.isCorrect ? getPointsForDifficulty(result.question.difficulty) : 0),
-    0,
-  );
+export async function saveQuizRun(
+  user: User,
+  results: QuizAnswerResult[],
+  options: SaveQuizRunOptions = {},
+): Promise<number> {
+  const mode = options.mode ?? 'free';
+  const earnedPoints =
+    mode === 'free'
+      ? results.reduce(
+          (sum, result) => sum + (result.isCorrect ? getPointsForDifficulty(result.question.difficulty) : 0),
+          0,
+        )
+      : 0;
   const correctCount = results.filter((result) => result.isCorrect).length;
   const userReference = doc(db, 'users', user.uid);
   let updatedStats = getDefaultStats(user);
@@ -165,6 +196,10 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
       : getDefaultStats(user);
     const nextPoints = current.points + earnedPoints;
     const nextSeasonPoints = current.seasonPoints + earnedPoints;
+    const nextGrade =
+      mode === 'exam' && options.grade && options.passed && gradeOrder.indexOf(options.grade) > gradeOrder.indexOf(current.grade)
+        ? options.grade
+        : current.grade;
     updatedStats = {
       ...current,
       points: nextPoints,
@@ -172,6 +207,7 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
       correctCount: current.correctCount + correctCount,
       totalCount: current.totalCount + results.length,
       rank: getRankForPoints(nextPoints),
+      grade: nextGrade,
     };
     transaction.set(
       userReference,
@@ -183,6 +219,7 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
         correctCount: increment(correctCount),
         totalCount: increment(results.length),
         rank: getRankForPoints(nextPoints),
+        grade: nextGrade,
         updatedAt: serverTimestamp(),
       },
       { merge: true },
@@ -196,11 +233,11 @@ export async function saveQuizRun(user: User, results: QuizAnswerResult[]): Prom
       correct: result.question.correct,
       userAnswer: result.userAnswer,
       isCorrect: result.isCorrect,
-      points: result.isCorrect ? getPointsForDifficulty(result.question.difficulty) : 0,
+      points: mode === 'free' && result.isCorrect ? getPointsForDifficulty(result.question.difficulty) : 0,
       difficulty: result.question.difficulty,
       explanation: result.question.explanation || '',
-      mode: 'free',
-      grade: '',
+      mode,
+      grade: options.grade || '',
       timestamp: serverTimestamp(),
     });
   }

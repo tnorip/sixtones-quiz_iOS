@@ -10,9 +10,18 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
 export function ResultScreen({ navigation, route }: Props) {
   const { user } = useAuth();
-  const { score, total, earnedPoints, saved } = route.params;
+  const { score, total, earnedPoints, saved, mode, grade, passed, passLine } = route.params;
   const rate = score / total;
-  const message = rate === 1 ? 'PERFECT!' : rate >= 0.6 ? 'GREAT!' : 'NICE TRY!';
+  const message =
+    mode === 'exam'
+      ? passed
+        ? '合格！'
+        : '不合格'
+      : rate === 1
+        ? 'PERFECT!'
+        : rate >= 0.6
+          ? 'GREAT!'
+          : 'NICE TRY!';
 
   return (
     <Screen>
@@ -24,14 +33,26 @@ export function ResultScreen({ navigation, route }: Props) {
         <Text style={styles.score}>{score}</Text>
         <Text style={styles.total}>/ {total}</Text>
         <Text style={styles.rate}>正解率 {Math.round(rate * 100)}%</Text>
-        <Text style={styles.points}>+{earnedPoints} P</Text>
+        {mode === 'exam' ? (
+          <Text style={styles.points}>{grade} · 合格ライン {passLine}問</Text>
+        ) : (
+          <Text style={styles.points}>+{earnedPoints} P</Text>
+        )}
       </View>
       <Text style={styles.caption}>
-        {user
-          ? saved
-            ? 'ポイントと回答履歴を保存しました。'
-            : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
-          : 'ゲスト利用中のため、ポイントと履歴は保存されません。'}
+        {mode === 'exam'
+          ? user
+            ? saved
+              ? passed
+                ? '合格結果と回答履歴を保存しました。プロフィールの最高検定級にも反映されます。'
+                : '検定結果と回答履歴を保存しました。'
+              : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
+            : 'ゲスト利用中のため、検定結果と履歴は保存されません。'
+          : user
+            ? saved
+              ? 'ポイントと回答履歴を保存しました。'
+              : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
+            : 'ゲスト利用中のため、ポイントと履歴は保存されません。'}
       </Text>
       <View style={styles.actions}>
         <GoldButton label="もう一度挑戦" onPress={() => navigation.replace('GameMenu')} />

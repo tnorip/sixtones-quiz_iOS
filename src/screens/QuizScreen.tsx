@@ -8,7 +8,7 @@ import { Screen } from '../components/Screen';
 import { sampleQuizzes, type Quiz } from '../data/quizzes';
 import type { RootStackParamList } from '../navigation';
 import { loadQuizzes } from '../services/quizRepository';
-import { saveQuizRun, type QuizAnswerResult } from '../services/userRepository';
+import { examConfigs, saveQuizRun, type QuizAnswerResult } from '../services/userRepository';
 import { colors, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Quiz'>;
@@ -35,6 +35,9 @@ function randomizeOptions(quiz: Quiz): Quiz {
 
 export function QuizScreen({ navigation, route }: Props) {
   const { user } = useAuth();
+  const mode = route.params.mode ?? 'free';
+  const examGrade = mode === 'exam' && 'grade' in route.params ? route.params.grade : undefined;
+  const examConfig = examGrade ? examConfigs[examGrade] : null;
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,12 +72,18 @@ export function QuizScreen({ navigation, route }: Props) {
   }, []);
 
   const quizzes = useMemo(() => {
+    if (mode === 'exam' && examConfig) {
+      const filtered = allQuizzes.filter((quiz) => examConfig.difficulties.includes(quiz.difficulty));
+      return shuffle(filtered.length ? filtered : allQuizzes).slice(0, examConfig.questions).map(randomizeOptions);
+    }
+
+    const difficulty = 'difficulty' in route.params ? route.params.difficulty : 'ランダム';
     const filtered =
-      route.params.difficulty === 'ランダム'
+      difficulty === 'ランダム'
         ? allQuizzes
-        : allQuizzes.filter((quiz) => quiz.difficulty === route.params.difficulty);
+        : allQuizzes.filter((quiz) => quiz.difficulty === difficulty);
     return shuffle(filtered.length ? filtered : allQuizzes).slice(0, 5).map(randomizeOptions);
-  }, [allQuizzes, route.params.difficulty]);
+  }, [allQuizzes, examConfig, mode, route.params]);
 
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -125,12 +134,17 @@ export function QuizScreen({ navigation, route }: Props) {
   const next = async () => {
     if (index === quizzes.length - 1) {
       const finalScore = results.filter((result) => result.isCorrect).length;
+      const passed = mode === 'exam' && examConfig ? finalScore >= examConfig.passLine : undefined;
       let earnedPoints = 0;
       let saved = false;
       if (user && !usingSampleData) {
         setIsSaving(true);
         try {
-          earnedPoints = await saveQuizRun(user, results);
+          earnedPoints = await saveQuizRun(user, results, {
+            mode,
+            grade: examGrade,
+            passed,
+          });
           saved = true;
         } catch (error) {
           console.warn('Failed to save quiz result.', error);
@@ -138,7 +152,16 @@ export function QuizScreen({ navigation, route }: Props) {
           setIsSaving(false);
         }
       }
-      navigation.replace('Result', { score: finalScore, total: quizzes.length, earnedPoints, saved });
+      navigation.replace('Result', {
+        score: finalScore,
+        total: quizzes.length,
+        earnedPoints,
+        saved,
+        mode,
+        grade: examGrade,
+        passed,
+        passLine: examConfig?.passLine,
+      });
       return;
     }
     setIndex((value) => value + 1);
@@ -149,7 +172,7 @@ export function QuizScreen({ navigation, route }: Props) {
     <Screen>
       <View style={styles.progressRow}>
         <Text style={styles.progress}>QUESTION {index + 1} / {quizzes.length}</Text>
-        <Text style={styles.score}>正解 {score}</Text>
+        <Text style={styles.score}>{examGrade ?? `正解 ${score}`}</Text>
       </View>
       {usingSampleData ? <Text style={styles.sampleNotice}>オフライン用サンプル問題で出題中</Text> : null}
       <View style={styles.track}>

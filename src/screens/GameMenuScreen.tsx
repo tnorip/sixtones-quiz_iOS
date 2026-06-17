@@ -4,6 +4,7 @@ import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
 import type { Difficulty } from '../data/quizzes';
 import type { RootStackParamList } from '../navigation';
+import { examConfigs, type ExamGrade } from '../services/userRepository';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameMenu'>;
@@ -14,6 +15,8 @@ const levels: Array<{ label: string; difficulty: Difficulty | 'ランダム'; de
   { label: '上級', difficulty: '上級', detail: '目指せストQマスター' },
   { label: 'ランダム', difficulty: 'ランダム', detail: '難易度を混ぜて出題' },
 ];
+
+const grades: ExamGrade[] = ['4級', '3級', '2級', '1級', '特級'];
 
 export function GameMenuScreen({ navigation }: Props) {
   return (
@@ -27,14 +30,30 @@ export function GameMenuScreen({ navigation }: Props) {
           <GoldButton
             label={`${level.label}  ·  ${level.detail}`}
             variant={index === 0 ? 'gold' : 'dark'}
-            onPress={() => navigation.navigate('Quiz', { difficulty: level.difficulty })}
+            onPress={() => navigation.navigate('Quiz', { difficulty: level.difficulty, mode: 'free' })}
           />
         </View>
       ))}
+
       <View style={styles.examCard}>
         <Text style={styles.examTitle}>ストQ検定</Text>
-        <Text style={styles.examText}>級ごとの合格ラインを突破するチャレンジモード。次の実装フェーズで接続します。</Text>
+        <Text style={styles.examText}>
+          級ごとの合格ラインを突破するチャレンジモード。合格するとプロフィールの最高検定級に反映されます。
+        </Text>
       </View>
+      {grades.map((grade) => {
+        const config = examConfigs[grade];
+        return (
+          <View key={grade} style={styles.buttonWrap}>
+            <GoldButton
+              label={`${grade}  ·  ${config.questions}問中${config.passLine}問正解で合格`}
+              variant="dark"
+              onPress={() => navigation.navigate('Quiz', { grade, mode: 'exam' })}
+            />
+          </View>
+        );
+      })}
+      <Text style={styles.examNote}>ストーン消費とタイマーは、ストーン機能の実装後に有効化します。</Text>
     </Screen>
   );
 }
@@ -50,8 +69,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 18,
     marginTop: 18,
+    marginBottom: 14,
     padding: 20,
   },
   examTitle: { color: colors.gold, fontSize: 20, fontWeight: '800' },
   examText: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 8 },
+  examNote: { color: colors.muted, fontSize: 11, lineHeight: 18, textAlign: 'center', marginTop: 2 },
 });

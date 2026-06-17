@@ -62,7 +62,14 @@ function RootNavigator() {
           <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="GameMenu" component={GameMenuScreen} options={{ title: 'クイズを選ぶ' }} />
-          <Stack.Screen name="Quiz" component={QuizScreen} options={{ title: 'フリープレイ', gestureEnabled: false }} />
+          <Stack.Screen
+            name="Quiz"
+            component={QuizScreen}
+            options={({ route }) => ({
+              title: route.params.mode === 'exam' ? 'ストQ検定' : 'フリープレイ',
+              gestureEnabled: false,
+            })}
+          />
           <Stack.Screen name="Result" component={ResultScreen} options={{ title: '結果', gestureEnabled: false }} />
           <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'アカウント' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'プロフィール' }} />
