@@ -29,8 +29,10 @@ export function ProfileScreen({ navigation }: Props) {
         <StatCard label="累計ポイント" value={`${stats.points}P`} />
         <StatCard label="今シーズン" value={`${stats.seasonPoints}P`} />
         <StatCard label="ランク" value={stats.rank} />
+        <StatCard label="ストーン" value={`${stats.stones}個`} />
         <StatCard label="正解率" value={`${correctRate}%`} />
         <StatCard label="回答数" value={`${stats.totalCount}問`} />
+        <StatCard label="履歴表示" value={`${stats.historyLimit}件`} />
         <StatCard label="最高検定級" value={stats.grade} />
       </View>
 

@@ -10,7 +10,6 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Difficulty, Quiz } from '../data/quizzes';
@@ -25,6 +24,7 @@ export type UserStats = {
   correctCount: number;
   totalCount: number;
   historyLimit: number;
+  loginBonusDate: string | null;
   seasonPoints: number;
   grade: string;
 };
@@ -135,6 +135,7 @@ export function getDefaultStats(user?: User | null): UserStats {
     correctCount: 0,
     totalCount: 0,
     historyLimit: 5,
+    loginBonusDate: null,
     seasonPoints: 0,
     grade: '-',
   };
@@ -152,6 +153,7 @@ function normalizeStats(uid: string, value: Record<string, unknown>, user?: User
     correctCount: typeof value.correctCount === 'number' ? value.correctCount : fallback.correctCount,
     totalCount: typeof value.totalCount === 'number' ? value.totalCount : fallback.totalCount,
     historyLimit: typeof value.historyLimit === 'number' ? value.historyLimit : fallback.historyLimit,
+    loginBonusDate: typeof value.loginBonusDate === 'string' ? value.loginBonusDate : fallback.loginBonusDate,
     seasonPoints: typeof value.seasonPoints === 'number' ? value.seasonPoints : fallback.seasonPoints,
     grade: typeof value.grade === 'string' ? value.grade : fallback.grade,
   };
@@ -159,17 +161,86 @@ function normalizeStats(uid: string, value: Record<string, unknown>, user?: User
 
 export async function loadUserStats(user: User): Promise<UserStats> {
   const reference = doc(db, 'users', user.uid);
-  const snapshot = await getDoc(reference);
-  if (!snapshot.exists()) {
-    const initialStats = getDefaultStats(user);
-    await setDoc(reference, {
-      ...initialStats,
-      updatedAt: serverTimestamp(),
-    });
-    return initialStats;
-  }
+  const today = new Date().toISOString().split('T')[0];
+  let nextStats = getDefaultStats(user);
 
-  return normalizeStats(user.uid, snapshot.data(), user);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(reference);
+    const current = snapshot.exists() ? normalizeStats(user.uid, snapshot.data(), user) : getDefaultStats(user);
+    const receivesBonus = current.loginBonusDate !== today;
+
+    nextStats = receivesBonus ? { ...current, stones: current.stones + 1, loginBonusDate: today } : current;
+    if (!receivesBonus && snapshot.exists()) return;
+
+    transaction.set(
+      reference,
+      {
+        ...nextStats,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
+
+  return nextStats;
+}
+
+export async function expandHistoryLimit(user: User): Promise<UserStats> {
+  const userReference = doc(db, 'users', user.uid);
+  let nextStats = getDefaultStats(user);
+
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userReference);
+    const current = snapshot.exists() ? normalizeStats(user.uid, snapshot.data(), user) : getDefaultStats(user);
+    if (current.stones < 5) {
+      throw new Error('ストーンが不足しています。');
+    }
+    if (current.historyLimit >= 100) {
+      throw new Error('履歴表示件数は上限に達しています。');
+    }
+
+    nextStats = {
+      ...current,
+      stones: current.stones - 5,
+      historyLimit: Math.min(current.historyLimit + 5, 100),
+    };
+    transaction.set(
+      userReference,
+      {
+        stones: nextStats.stones,
+        historyLimit: nextStats.historyLimit,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
+
+  return nextStats;
+}
+
+export async function spendStones(user: User, amount: number): Promise<UserStats> {
+  const userReference = doc(db, 'users', user.uid);
+  let nextStats = getDefaultStats(user);
+
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userReference);
+    const current = snapshot.exists() ? normalizeStats(user.uid, snapshot.data(), user) : getDefaultStats(user);
+    if (current.stones < amount) {
+      throw new Error('ストーンが不足しています。');
+    }
+
+    nextStats = { ...current, stones: current.stones - amount };
+    transaction.set(
+      userReference,
+      {
+        stones: nextStats.stones,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
+
+  return nextStats;
 }
 
 export async function saveQuizRun(

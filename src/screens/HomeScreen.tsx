@@ -13,7 +13,7 @@ const menuItems = [
   ['プロフィール', 'ポイントや称号を確認', 'Profile'],
   ['履歴', 'これまでの回答を確認', 'History'],
   ['ランキング', '全国のファンと競う', 'Ranking'],
-  ['ストーン', '所持ストーンを確認', 'Placeholder'],
+  ['ストーン', '所持ストーンを確認', 'Stones'],
 ] as const;
 
 export function HomeScreen({ navigation }: Props) {
@@ -55,6 +55,7 @@ export function HomeScreen({ navigation }: Props) {
               if (target === 'Profile') navigation.navigate('Profile');
               else if (target === 'History') navigation.navigate('History');
               else if (target === 'Ranking') navigation.navigate('Ranking');
+              else if (target === 'Stones') navigation.navigate('Stones');
               else navigation.navigate('Placeholder', { title, description });
             }}
             style={({ pressed }) => [styles.menuCard, pressed && styles.pressed]}

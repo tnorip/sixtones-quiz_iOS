@@ -20,5 +20,6 @@ export type RootStackParamList = {
   Profile: undefined;
   History: undefined;
   Ranking: undefined;
+  Stones: undefined;
   Placeholder: { title: string; description: string };
 };

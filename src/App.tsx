@@ -16,6 +16,7 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { QuizScreen } from './screens/QuizScreen';
 import { RankingScreen } from './screens/RankingScreen';
 import { ResultScreen } from './screens/ResultScreen';
+import { StonesScreen } from './screens/StonesScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationTheme = {
@@ -75,6 +76,7 @@ function RootNavigator() {
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'プロフィール' }} />
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: '履歴' }} />
           <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: 'ランキング' }} />
+          <Stack.Screen name="Stones" component={StonesScreen} options={{ title: 'ストーン' }} />
           <Stack.Screen
             name="Placeholder"
             component={PlaceholderScreen}
