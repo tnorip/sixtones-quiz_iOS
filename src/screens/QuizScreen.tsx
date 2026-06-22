@@ -78,10 +78,7 @@ export function QuizScreen({ navigation, route }: Props) {
     }
 
     const difficulty = 'difficulty' in route.params ? route.params.difficulty : 'ランダム';
-    const filtered =
-      difficulty === 'ランダム'
-        ? allQuizzes
-        : allQuizzes.filter((quiz) => quiz.difficulty === difficulty);
+    const filtered = difficulty === 'ランダム' ? allQuizzes : allQuizzes.filter((quiz) => quiz.difficulty === difficulty);
     return shuffle(filtered.length ? filtered : allQuizzes).slice(0, 5).map(randomizeOptions);
   }, [allQuizzes, examConfig, mode, route.params]);
 
@@ -213,7 +210,9 @@ export function QuizScreen({ navigation, route }: Props) {
   return (
     <Screen>
       <View style={styles.progressRow}>
-        <Text style={styles.progress}>QUESTION {index + 1} / {quizzes.length}</Text>
+        <Text style={styles.progress}>
+          QUESTION {index + 1} / {quizzes.length}
+        </Text>
         <Text style={styles.score}>{examGrade ?? `正解 ${score}`}</Text>
       </View>
       {usingSampleData ? <Text style={styles.sampleNotice}>オフライン用サンプル問題で出題中</Text> : null}

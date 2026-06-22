@@ -100,13 +100,18 @@ export const examConfigs: Record<
 const gradeOrder = ['-', '4級', '3級', '2級', '1級', '特級'];
 
 const rankThresholds = [
-  { minPoints: 1500, rankName: '最高地優吾' },
-  { minPoints: 700, rankName: 'おやーンズ' },
+  { minPoints: 1500, rankName: '最高地点級' },
+  { minPoints: 700, rankName: 'おやーんず' },
   { minPoints: 350, rankName: 'サタスペリスナー' },
   { minPoints: 150, rankName: 'チムスト' },
   { minPoints: 50, rankName: '見習いストーンズ' },
   { minPoints: 0, rankName: '新規リスナー' },
 ];
+
+function getGradeIndex(grade: string): number {
+  const index = gradeOrder.indexOf(grade);
+  return index >= 0 ? index : 0;
+}
 
 export function getPointsForDifficulty(difficulty: Difficulty): number {
   switch (difficulty) {
@@ -137,7 +142,7 @@ export function getSeasonEndDate(date = new Date()): Date {
 }
 
 export function getDefaultStats(user?: User | null): UserStats {
-  const username = user?.displayName || user?.email?.split('@')[0] || 'ゲスト リスナー';
+  const username = user?.displayName || user?.email?.split('@')[0] || 'ゲストリスナー';
   return {
     uid: user?.uid ?? '',
     username,
@@ -302,13 +307,14 @@ export async function saveQuizRun(
 
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(userReference);
-    const current = snapshot.exists()
-      ? normalizeStats(user.uid, snapshot.data(), user)
-      : getDefaultStats(user);
+    const current = snapshot.exists() ? normalizeStats(user.uid, snapshot.data(), user) : getDefaultStats(user);
     const nextPoints = current.points + earnedPoints;
     const nextSeasonPoints = current.seasonPoints + earnedPoints;
     const nextGrade =
-      mode === 'exam' && options.grade && options.passed && gradeOrder.indexOf(options.grade) > gradeOrder.indexOf(current.grade)
+      mode === 'exam' &&
+      options.grade &&
+      options.passed &&
+      getGradeIndex(options.grade) > getGradeIndex(current.grade)
         ? options.grade
         : current.grade;
     updatedStats = {

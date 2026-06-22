@@ -89,7 +89,7 @@ export function GameMenuScreen({ navigation }: Props) {
         return (
           <View key={grade} style={styles.buttonWrap}>
             <GoldButton
-              label={`${grade}  ·  ${config.questions}問中${config.passLine}問正解で合格 · 💎${config.stoneCost}`}
+              label={`${grade}  ·  ${config.questions}問中${config.passLine}問正解で合格 · ストーン${config.stoneCost}個`}
               variant="dark"
               disabled={disabled}
               onPress={() => void startExam(grade)}
@@ -97,7 +97,9 @@ export function GameMenuScreen({ navigation }: Props) {
           </View>
         );
       })}
-      <Text style={styles.examNote}>ログインユーザーは開始時にストーンを消費します。ゲスト利用ではお試しとして消費されません。</Text>
+      <Text style={styles.examNote}>
+        ログインユーザーは開始時にストーンを消費します。ゲスト利用ではお試しとして消費されません。
+      </Text>
     </Screen>
   );
 }

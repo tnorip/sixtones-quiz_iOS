@@ -10,7 +10,7 @@ export type Quiz = {
   randomizeOptions?: boolean;
 };
 
-// Firebase接続前でも実機で一連の操作を確認できる開発用データ。
+// Firebaseに接続できない場合やクイズ未登録時の開発用フォールバックデータ。
 export const sampleQuizzes: Quiz[] = [
   {
     id: 'sample-1',
@@ -44,8 +44,8 @@ export const sampleQuizzes: Quiz[] = [
   },
   {
     id: 'sample-5',
-    question: 'SixTONESの公式YouTubeチャンネルで公開されている企画は？',
-    options: ['ドライブ企画', '料理だけ', 'ゲーム実況だけ', 'ニュース番組'],
+    question: 'SixTONESの公式YouTubeチャンネルで公開されている代表的な企画は？',
+    options: ['ドライブ企画', '料理対決', 'ゲーム実況だけ', 'ニュース番組'],
     correct: 0,
     difficulty: '中級',
   },
