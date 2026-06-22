@@ -22,5 +22,6 @@ export type RootStackParamList = {
   Ranking: undefined;
   Stones: undefined;
   Proposal: undefined;
+  Help: undefined;
   Placeholder: { title: string; description: string };
 };

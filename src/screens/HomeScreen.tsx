@@ -67,12 +67,7 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       <Pressable
-        onPress={() =>
-          navigation.navigate('Placeholder', {
-            title: '遊び方',
-            description: 'フリープレイや検定モードのルールを掲載する画面です。',
-          })
-        }
+        onPress={() => navigation.navigate('Help')}
       >
         <Text style={styles.help}>遊び方を見る</Text>
       </Pressable>

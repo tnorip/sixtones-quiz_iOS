@@ -8,8 +8,9 @@ import type { RootStackParamList } from './navigation';
 import { colors } from './theme';
 import { AccountScreen } from './screens/AccountScreen';
 import { GameMenuScreen } from './screens/GameMenuScreen';
-import { HomeScreen } from './screens/HomeScreen';
+import { HelpScreen } from './screens/HelpScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
+import { HomeScreen } from './screens/HomeScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
@@ -79,6 +80,7 @@ function RootNavigator() {
           <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: 'ランキング' }} />
           <Stack.Screen name="Stones" component={StonesScreen} options={{ title: 'ストーン' }} />
           <Stack.Screen name="Proposal" component={ProposalScreen} options={{ title: 'クイズ提案' }} />
+          <Stack.Screen name="Help" component={HelpScreen} options={{ title: '遊び方' }} />
           <Stack.Screen
             name="Placeholder"
             component={PlaceholderScreen}
