@@ -19,7 +19,7 @@ const menuItems = [
 export function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { stats } = useUserStats();
-  const displayName = user ? stats.username : 'ゲスト リスナー';
+  const displayName = user ? stats.username : 'ゲストリスナー';
 
   return (
     <Screen>
@@ -56,7 +56,6 @@ export function HomeScreen({ navigation }: Props) {
               else if (target === 'History') navigation.navigate('History');
               else if (target === 'Ranking') navigation.navigate('Ranking');
               else if (target === 'Stones') navigation.navigate('Stones');
-              else navigation.navigate('Placeholder', { title, description });
             }}
             style={({ pressed }) => [styles.menuCard, pressed && styles.pressed]}
           >
@@ -66,9 +65,7 @@ export function HomeScreen({ navigation }: Props) {
         ))}
       </View>
 
-      <Pressable
-        onPress={() => navigation.navigate('Help')}
-      >
+      <Pressable onPress={() => navigation.navigate('Help')}>
         <Text style={styles.help}>遊び方を見る</Text>
       </Pressable>
       <Text style={styles.disclaimer}>このアプリは非公式のファン向けクイズアプリです。</Text>
