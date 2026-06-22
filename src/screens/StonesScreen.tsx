@@ -86,8 +86,15 @@ export function StonesScreen({ navigation }: Props) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>クイズ提案ボーナス</Text>
         <Text style={styles.cardText}>
-          投稿したクイズが採用されるとストーン3個を獲得できます。提案機能は次の実装で追加します。
+          投稿したクイズが採用されるとストーン3個を獲得できます。採用可否は運営が確認します。
         </Text>
+        <View style={styles.buttonWrap}>
+          <GoldButton
+            label={user ? 'クイズを提案する' : 'ログインして提案する'}
+            variant="dark"
+            onPress={() => navigation.navigate(user ? 'Proposal' : 'Account')}
+          />
+        </View>
       </View>
     </Screen>
   );

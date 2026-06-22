@@ -74,6 +74,13 @@ export type RankingSeason = {
   data: RankingEntry[];
 };
 
+export type QuizProposalInput = {
+  question: string;
+  options: string[];
+  difficulty: Difficulty;
+  explanation: string;
+};
+
 export const examConfigs: Record<
   ExamGrade,
   { questions: number; passLine: number; difficulties: Difficulty[]; stoneCost: number }
@@ -241,6 +248,20 @@ export async function spendStones(user: User, amount: number): Promise<UserStats
   });
 
   return nextStats;
+}
+
+export async function submitQuizProposal(user: User, input: QuizProposalInput): Promise<void> {
+  await addDoc(collection(db, 'proposals'), {
+    uid: user.uid,
+    username: user.displayName || user.email?.split('@')[0] || '匿名ユーザー',
+    question: input.question,
+    options: input.options,
+    correct: 0,
+    difficulty: input.difficulty,
+    explanation: input.explanation,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+  });
 }
 
 export async function saveQuizRun(

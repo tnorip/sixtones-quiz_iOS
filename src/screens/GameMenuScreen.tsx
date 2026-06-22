@@ -97,7 +97,7 @@ export function GameMenuScreen({ navigation }: Props) {
           </View>
         );
       })}
-      <Text style={styles.examNote}>ストーン消費とタイマーは、ストーン機能の実装後に有効化します。</Text>
+      <Text style={styles.examNote}>ログインユーザーは開始時にストーンを消費します。ゲスト利用ではお試しとして消費されません。</Text>
     </Screen>
   );
 }

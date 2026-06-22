@@ -13,6 +13,7 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { ProposalScreen } from './screens/ProposalScreen';
 import { QuizScreen } from './screens/QuizScreen';
 import { RankingScreen } from './screens/RankingScreen';
 import { ResultScreen } from './screens/ResultScreen';
@@ -77,6 +78,7 @@ function RootNavigator() {
           <Stack.Screen name="History" component={HistoryScreen} options={{ title: '履歴' }} />
           <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: 'ランキング' }} />
           <Stack.Screen name="Stones" component={StonesScreen} options={{ title: 'ストーン' }} />
+          <Stack.Screen name="Proposal" component={ProposalScreen} options={{ title: 'クイズ提案' }} />
           <Stack.Screen
             name="Placeholder"
             component={PlaceholderScreen}
