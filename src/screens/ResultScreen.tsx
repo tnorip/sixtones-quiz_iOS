@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StyleSheet, Text, View } from 'react-native';
+import { Share, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
@@ -12,6 +12,7 @@ export function ResultScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const { score, total, earnedPoints, saved, mode, grade, passed, passLine } = route.params;
   const rate = score / total;
+  const ratePercent = Math.round(rate * 100);
   const message =
     mode === 'exam'
       ? passed
@@ -23,6 +24,31 @@ export function ResultScreen({ navigation, route }: Props) {
           ? 'GREAT!'
           : 'NICE TRY!';
 
+  const summary = mode === 'exam' ? `${grade} ${passed ? '合格' : '不合格'}` : `正解率 ${ratePercent}%`;
+  const shareMessage = `ストQで ${score}/${total} 問正解！\n${summary}\nhttps://st-fanquiz.web.app/`;
+
+  const shareResult = async () => {
+    await Share.share({
+      message: shareMessage,
+      title: 'ストQ 結果共有',
+    });
+  };
+
+  const caption =
+    mode === 'exam'
+      ? user
+        ? saved
+          ? passed
+            ? '合格結果と回答履歴を保存しました。プロフィールの最高検定級にも反映されます。'
+            : '検定結果と回答履歴を保存しました。'
+          : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
+        : 'ゲスト利用中のため、検定結果と履歴は保存されません。'
+      : user
+        ? saved
+          ? 'ポイントと回答履歴を保存しました。'
+          : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
+        : 'ゲスト利用中のため、ポイントと履歴は保存されません。';
+
   return (
     <Screen>
       <View style={styles.hero}>
@@ -32,30 +58,21 @@ export function ResultScreen({ navigation, route }: Props) {
       <View style={styles.scoreCard}>
         <Text style={styles.score}>{score}</Text>
         <Text style={styles.total}>/ {total}</Text>
-        <Text style={styles.rate}>正解率 {Math.round(rate * 100)}%</Text>
+        <Text style={styles.rate}>正解率 {ratePercent}%</Text>
         {mode === 'exam' ? (
-          <Text style={styles.points}>{grade} · 合格ライン {passLine}問</Text>
+          <Text style={styles.points}>
+            {grade} ・ 合格ライン {passLine}問
+          </Text>
         ) : (
           <Text style={styles.points}>+{earnedPoints} P</Text>
         )}
       </View>
-      <Text style={styles.caption}>
-        {mode === 'exam'
-          ? user
-            ? saved
-              ? passed
-                ? '合格結果と回答履歴を保存しました。プロフィールの最高検定級にも反映されます。'
-                : '検定結果と回答履歴を保存しました。'
-              : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
-            : 'ゲスト利用中のため、検定結果と履歴は保存されません。'
-          : user
-            ? saved
-              ? 'ポイントと回答履歴を保存しました。'
-              : '保存に失敗しました。通信環境を確認してもう一度お試しください。'
-            : 'ゲスト利用中のため、ポイントと履歴は保存されません。'}
-      </Text>
+      <Text style={styles.caption}>{caption}</Text>
       <View style={styles.actions}>
-        <GoldButton label="もう一度挑戦" onPress={() => navigation.replace('GameMenu')} />
+        <GoldButton label="結果を共有する" variant="dark" onPress={() => void shareResult()} />
+        <View style={styles.secondary}>
+          <GoldButton label="もう一度挑戦" onPress={() => navigation.replace('GameMenu')} />
+        </View>
         <View style={styles.secondary}>
           <GoldButton label="ホームへ戻る" variant="dark" onPress={() => navigation.popToTop()} />
         </View>
