@@ -3,11 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { Screen } from '../components/Screen';
 import { useUserStats } from '../hooks/useUserStats';
-import {
-  loadCurrentRanking,
-  type RankingEntry,
-  type RankingSeason,
-} from '../services/userRepository';
+import { loadCurrentRanking, type RankingEntry, type RankingSeason } from '../services/userRepository';
 import { colors } from '../theme';
 
 export function RankingScreen() {
@@ -46,7 +42,7 @@ export function RankingScreen() {
       <View style={styles.header}>
         <Text style={styles.label}>MONTHLY RANKING</Text>
         <Text style={styles.title}>第{season?.seasonNumber ?? '-'}シーズン</Text>
-        <Text style={styles.note}>毎月月末にリセットされます</Text>
+        <Text style={styles.note}>毎月末にリセットされます</Text>
       </View>
 
       {isLoading ? <ActivityIndicator color={colors.gold} style={styles.loading} /> : null}
