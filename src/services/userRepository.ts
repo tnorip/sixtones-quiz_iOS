@@ -81,6 +81,11 @@ export type QuizProposalInput = {
   explanation: string;
 };
 
+export type QuizReportInput = {
+  question: Quiz;
+  detail: string;
+};
+
 export const examConfigs: Record<
   ExamGrade,
   { questions: number; passLine: number; difficulties: Difficulty[]; stoneCost: number }
@@ -259,6 +264,20 @@ export async function submitQuizProposal(user: User, input: QuizProposalInput): 
     correct: 0,
     difficulty: input.difficulty,
     explanation: input.explanation,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function submitQuizReport(user: User, input: QuizReportInput): Promise<void> {
+  await addDoc(collection(db, 'reports'), {
+    uid: user.uid,
+    username: user.displayName || user.email?.split('@')[0] || '匿名ユーザー',
+    question: input.question.question,
+    options: input.question.options,
+    correct: input.question.correct,
+    difficulty: input.question.difficulty,
+    detail: input.detail,
     status: 'pending',
     createdAt: serverTimestamp(),
   });

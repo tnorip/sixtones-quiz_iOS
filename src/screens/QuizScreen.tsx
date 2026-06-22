@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { GoldButton } from '../components/GoldButton';
 import { Screen } from '../components/Screen';
 import { sampleQuizzes, type Quiz } from '../data/quizzes';
 import type { RootStackParamList } from '../navigation';
 import { loadQuizzes } from '../services/quizRepository';
-import { examConfigs, saveQuizRun, type QuizAnswerResult } from '../services/userRepository';
+import { examConfigs, saveQuizRun, submitQuizReport, type QuizAnswerResult } from '../services/userRepository';
 import { colors, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Quiz'>;
@@ -89,6 +89,11 @@ export function QuizScreen({ navigation, route }: Props) {
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [results, setResults] = useState<QuizAnswerResult[]>([]);
+  const [reportVisible, setReportVisible] = useState(false);
+  const [reportDetail, setReportDetail] = useState('');
+  const [reportError, setReportError] = useState('');
+  const [reportMessage, setReportMessage] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
   const quiz = quizzes[index];
   const answered = selected !== null;
 
@@ -131,6 +136,42 @@ export function QuizScreen({ navigation, route }: Props) {
     }
   };
 
+  const resetReportState = () => {
+    setReportVisible(false);
+    setReportDetail('');
+    setReportError('');
+    setReportMessage('');
+    setIsReporting(false);
+  };
+
+  const reportQuestion = async () => {
+    if (!user) {
+      navigation.navigate('Account');
+      return;
+    }
+
+    const detail = reportDetail.trim();
+    setReportError('');
+    setReportMessage('');
+
+    if (!detail) {
+      setReportError('間違いの内容を入力してください。');
+      return;
+    }
+
+    setIsReporting(true);
+    try {
+      await submitQuizReport(user, { question: quiz, detail });
+      setReportDetail('');
+      setReportVisible(false);
+      setReportMessage('報告を送信しました。確認いたします。');
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : '報告の送信に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   const next = async () => {
     if (index === quizzes.length - 1) {
       const finalScore = results.filter((result) => result.isCorrect).length;
@@ -166,6 +207,7 @@ export function QuizScreen({ navigation, route }: Props) {
     }
     setIndex((value) => value + 1);
     setSelected(null);
+    resetReportState();
   };
 
   return (
@@ -210,6 +252,32 @@ export function QuizScreen({ navigation, route }: Props) {
             {selected === quiz.correct ? '正解！' : '残念、不正解'}
           </Text>
           {quiz.explanation ? <Text style={styles.explanation}>{quiz.explanation}</Text> : null}
+          <View style={styles.reportCard}>
+            <Pressable onPress={() => setReportVisible((value) => !value)} style={styles.reportToggle}>
+              <Text style={styles.reportToggleText}>間違いを報告する</Text>
+            </Pressable>
+            {reportVisible ? (
+              <View style={styles.reportForm}>
+                <TextInput
+                  value={reportDetail}
+                  onChangeText={setReportDetail}
+                  placeholder="例: 正解が違う、選択肢に誤字がある"
+                  placeholderTextColor="#777269"
+                  maxLength={300}
+                  multiline
+                  style={styles.reportInput}
+                />
+                <GoldButton
+                  label={isReporting ? '送信中...' : user ? '報告を送信する' : 'ログインして報告する'}
+                  variant="dark"
+                  disabled={isReporting}
+                  onPress={() => void reportQuestion()}
+                />
+              </View>
+            ) : null}
+            {reportError ? <Text style={styles.reportError}>{reportError}</Text> : null}
+            {reportMessage ? <Text style={styles.reportMessage}>{reportMessage}</Text> : null}
+          </View>
           <GoldButton
             label={index === quizzes.length - 1 ? (isSaving ? '保存中...' : '結果を見る') : '次の問題へ'}
             disabled={isSaving}
@@ -261,6 +329,33 @@ const styles = StyleSheet.create({
   correctText: { color: '#63d69b', fontSize: 22, fontWeight: '900' },
   incorrectText: { color: '#ee8181', fontSize: 22, fontWeight: '900' },
   explanation: { color: colors.muted, fontSize: 14, lineHeight: 22, marginTop: 8, marginBottom: 18 },
+  reportCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    padding: 14,
+    marginBottom: 18,
+  },
+  reportToggle: { alignItems: 'center', paddingVertical: 4 },
+  reportToggleText: { color: colors.gold, fontSize: 13, fontWeight: '800' },
+  reportForm: { marginTop: 12 },
+  reportInput: {
+    minHeight: 90,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSoft,
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    textAlignVertical: 'top',
+  },
+  reportError: { color: '#ee8181', textAlign: 'center', fontSize: 12, lineHeight: 18, marginTop: 10 },
+  reportMessage: { color: colors.goldLight, textAlign: 'center', fontSize: 12, lineHeight: 18, marginTop: 10 },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   stateTitle: { color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 20, textAlign: 'center' },
   stateText: { color: colors.muted, fontSize: 14, marginTop: 10, textAlign: 'center' },
