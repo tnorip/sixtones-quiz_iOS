@@ -17,6 +17,9 @@ import {
 import { Platform } from 'react-native';
 import { auth, db } from './firebase';
 
+const DELETE_ACCOUNT_RECENT_LOGIN_MS = 5 * 60 * 1000;
+const DELETE_BATCH_SIZE = 450;
+
 if (Platform.OS !== 'web') {
   GoogleSignin.configure();
 }
@@ -78,27 +81,76 @@ export async function logout(): Promise<void> {
   await signOut(auth);
 }
 
+function assertRecentlySignedIn(): void {
+  const lastSignInTime = auth.currentUser?.metadata.lastSignInTime;
+  if (!lastSignInTime) return;
+
+  const lastSignInAt = new Date(lastSignInTime).getTime();
+  if (Number.isNaN(lastSignInAt)) return;
+
+  if (Date.now() - lastSignInAt > DELETE_ACCOUNT_RECENT_LOGIN_MS) {
+    throw new Error('アカウント削除には再ログインが必要です。一度ログアウトしてログインし直してください。');
+  }
+}
+
+async function deleteMatchingDocuments(collectionName: string, uid: string): Promise<void> {
+  while (true) {
+    const snapshot = await getDocs(query(collection(db, collectionName), where('uid', '==', uid), limit(DELETE_BATCH_SIZE)));
+    if (snapshot.empty) return;
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((item) => batch.delete(item.ref));
+    await batch.commit();
+  }
+}
+
+async function removeUserFromRankings(uid: string, username: string): Promise<void> {
+  const snapshot = await getDocs(collection(db, 'rankings'));
+  if (snapshot.empty) return;
+
+  const batch = writeBatch(db);
+  let hasChanges = false;
+
+  snapshot.docs.forEach((rankingDocument) => {
+    const value = rankingDocument.data();
+    if (!Array.isArray(value.data)) return;
+
+    const nextRanking = value.data.filter((item) => {
+      if (!item || typeof item !== 'object') return true;
+      const entry = item as { uid?: unknown; username?: unknown };
+      return entry.uid === uid ? false : entry.uid ? true : entry.username !== username;
+    });
+
+    if (nextRanking.length !== value.data.length) {
+      hasChanges = true;
+      batch.set(rankingDocument.ref, { data: nextRanking }, { merge: true });
+    }
+  });
+
+  if (hasChanges) await batch.commit();
+}
+
 export async function deleteCurrentAccount(): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
 
-  const references = [
-    ...(await getDocs(collection(db, 'history', user.uid, 'items'))).docs.map((snapshot) => snapshot.ref),
-    ...(await getDocs(query(collection(db, 'proposals'), where('uid', '==', user.uid), limit(450)))).docs.map(
-      (snapshot) => snapshot.ref,
-    ),
-    ...(await getDocs(query(collection(db, 'reports'), where('uid', '==', user.uid), limit(450)))).docs.map(
-      (snapshot) => snapshot.ref,
-    ),
-  ];
+  assertRecentlySignedIn();
 
-  for (let start = 0; start < references.length; start += 450) {
+  const historyReferences = (await getDocs(collection(db, 'history', user.uid, 'items'))).docs.map(
+    (snapshot) => snapshot.ref,
+  );
+
+  for (let start = 0; start < historyReferences.length; start += DELETE_BATCH_SIZE) {
     const batch = writeBatch(db);
-    references.slice(start, start + 450).forEach((reference) => batch.delete(reference));
+    historyReferences.slice(start, start + DELETE_BATCH_SIZE).forEach((reference) => batch.delete(reference));
     await batch.commit();
   }
 
+  await deleteMatchingDocuments('proposals', user.uid);
+  await deleteMatchingDocuments('reports', user.uid);
+  await removeUserFromRankings(user.uid, user.displayName || user.email?.split('@')[0] || '');
   await deleteDoc(doc(db, 'users', user.uid));
+
   if (Platform.OS !== 'web' && GoogleSignin.getCurrentUser()) {
     await GoogleSignin.revokeAccess();
   }

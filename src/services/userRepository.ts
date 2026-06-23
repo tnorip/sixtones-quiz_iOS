@@ -61,6 +61,7 @@ export type HistoryItem = {
 };
 
 export type RankingEntry = {
+  uid?: string;
   username: string;
   points: number;
   rank: string;
@@ -367,6 +368,7 @@ export async function updateRanking(stats: UserStats): Promise<void> {
   const seasonId = getSeasonId();
   const rankingReference = doc(db, 'rankings', seasonId);
   const entry: RankingEntry = {
+    uid: stats.uid,
     username: stats.username,
     points: stats.seasonPoints,
     rank: stats.rank,
@@ -376,7 +378,7 @@ export async function updateRanking(stats: UserStats): Promise<void> {
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(rankingReference);
     const current = snapshot.exists() ? snapshot.data() : {};
-    const ranking = Array.isArray(current.data)
+    const ranking: RankingEntry[] = Array.isArray(current.data)
       ? current.data
           .filter((item): item is RankingEntry => {
             if (!item || typeof item !== 'object') return false;
@@ -384,6 +386,7 @@ export async function updateRanking(stats: UserStats): Promise<void> {
             return typeof value.username === 'string' && typeof value.points === 'number';
           })
           .map((item) => ({
+            uid: typeof item.uid === 'string' ? item.uid : undefined,
             username: item.username,
             points: item.points,
             rank: typeof item.rank === 'string' ? item.rank : '',
@@ -391,7 +394,9 @@ export async function updateRanking(stats: UserStats): Promise<void> {
           }))
       : [];
 
-    const existingIndex = ranking.findIndex((item) => item.username === entry.username);
+    const existingIndex = ranking.findIndex((item) =>
+      item.uid ? item.uid === entry.uid : item.username === entry.username,
+    );
     if (existingIndex >= 0) {
       ranking[existingIndex] = entry;
     } else {
@@ -426,6 +431,7 @@ export async function loadCurrentRanking(): Promise<RankingSeason> {
           return typeof value.username === 'string' && typeof value.points === 'number';
         })
         .map((item) => ({
+          uid: typeof item.uid === 'string' ? item.uid : undefined,
           username: item.username,
           points: item.points,
           rank: typeof item.rank === 'string' ? item.rank : '',

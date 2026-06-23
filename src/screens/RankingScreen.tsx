@@ -35,6 +35,7 @@ export function RankingScreen() {
   }, []);
 
   const currentUsername = user ? stats.username : '';
+  const currentUid = user?.uid ?? '';
   const entries = season?.data ?? [];
 
   return (
@@ -53,10 +54,10 @@ export function RankingScreen() {
 
       {entries.map((entry, index) => (
         <RankingRow
-          key={`${entry.username}-${index}`}
+          key={`${entry.uid ?? entry.username}-${index}`}
           entry={entry}
           position={index + 1}
-          isCurrentUser={entry.username === currentUsername}
+          isCurrentUser={entry.uid ? entry.uid === currentUid : entry.username === currentUsername}
         />
       ))}
     </Screen>
