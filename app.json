@@ -10,11 +10,13 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.noristudio.stq",
+      "buildNumber": "1",
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true
     },
     "android": {
       "package": "com.noristudio.stq",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

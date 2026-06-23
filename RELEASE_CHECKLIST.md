@@ -17,6 +17,13 @@ npm run typecheck
 メモリ不足が出やすいPCでは、ExpoのローカルexportよりEAS Buildを優先する。
 過去に `JavaScript heap out of memory` とページファイル不足が発生しているため、ローカルで重いビルドを繰り返さない。
 
+## バージョン管理
+
+- 初回リリースは `expo.version: 1.0.0`
+- iOS提出時は `ios.buildNumber` を前回より大きい値にする
+- Android提出時は `android.versionCode` を前回より大きい値にする
+- 現在の初期値は `ios.buildNumber: 1` / `android.versionCode: 1`
+
 ## iOS ビルド
 
 Apple Developer Program加入完了後に実行する。
