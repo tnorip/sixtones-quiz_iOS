@@ -5,16 +5,7 @@ import {
   isCancelledResponse,
   isSuccessResponse,
 } from '@react-native-google-signin/google-signin';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  limit,
-  query,
-  where,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, limit, query, where, writeBatch } from 'firebase/firestore';
 import {
   deleteUser,
   GoogleAuthProvider,
@@ -92,13 +83,13 @@ export async function deleteCurrentAccount(): Promise<void> {
   if (!user) return;
 
   const references = [
-    ...(await getDocs(collection(db, 'history', user.uid, 'items'))).docs.map(
+    ...(await getDocs(collection(db, 'history', user.uid, 'items'))).docs.map((snapshot) => snapshot.ref),
+    ...(await getDocs(query(collection(db, 'proposals'), where('uid', '==', user.uid), limit(450)))).docs.map(
       (snapshot) => snapshot.ref,
     ),
-    ...(await getDocs(query(collection(db, 'proposals'), where('uid', '==', user.uid), limit(450))))
-      .docs.map((snapshot) => snapshot.ref),
-    ...(await getDocs(query(collection(db, 'reports'), where('uid', '==', user.uid), limit(450))))
-      .docs.map((snapshot) => snapshot.ref),
+    ...(await getDocs(query(collection(db, 'reports'), where('uid', '==', user.uid), limit(450)))).docs.map(
+      (snapshot) => snapshot.ref,
+    ),
   ];
 
   for (let start = 0; start < references.length; start += 450) {
